@@ -13,11 +13,11 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 @EnableCustomConfig
 @EnableRyFeignClients
 @SpringBootApplication
-public class SpzxRuleApplication
+public class ShareRuleApplication
 {
     public static void main(String[] args)
     {
-        SpringApplication.run(SpzxRuleApplication.class, args);
+        SpringApplication.run(ShareRuleApplication.class, args);
         System.out.println("(♥◠‿◠)ﾉﾞ  规则模块启动成功   ლ(´ڡ`ლ)ﾞ  \n" +
                 " .-------.       ____     __        \n" +
                 " |  _ _   \\      \\   \\   /  /    \n" +

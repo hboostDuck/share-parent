@@ -6,4 +6,6 @@ public interface IMapService {
 
     JSONObject calculateLatLng(String keyword);
 
+    Double calculateDistance(String startLongitude,String startLatitude,String endLongitude,String endLatitude);
+
 }

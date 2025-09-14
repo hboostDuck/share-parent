@@ -2,6 +2,8 @@ package com.share.device.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.CollectionUtils;
+import com.share.common.core.constant.SecurityConstants;
+import com.share.common.core.domain.R;
 import com.share.common.core.utils.bean.BeanUtils;
 import com.share.device.domain.Cabinet;
 import com.share.device.domain.Station;
@@ -9,7 +11,10 @@ import com.share.device.domain.StationLocation;
 import com.share.device.domain.StationVo;
 import com.share.device.service.ICabinetService;
 import com.share.device.service.IDeviceService;
+import com.share.device.service.IMapService;
 import com.share.device.service.IStationService;
+import com.share.rule.api.RemoteRuleService;
+import com.share.rule.api.domain.FeeRule;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.geo.Circle;
@@ -40,6 +45,12 @@ public class DeviceServiceImpl implements IDeviceService {
     @Autowired
     private MongoTemplate mongoTemplate;
 
+    @Autowired
+    private IMapService mapService;
+
+    @Autowired
+    RemoteRuleService remoteRuleService;
+
     @Override
     public List<StationVo> nearbyStation(String latitude, String longitude, Integer radius) {
         //坐标，确定中心点
@@ -65,10 +76,12 @@ public class DeviceServiceImpl implements IDeviceService {
         Map<Long, Cabinet> cabinetIdToCabinetMap = cabinetService.listByIds(cabinetIdList).stream().collect(Collectors.toMap(Cabinet::getId, Cabinet -> Cabinet));
 
         List<StationVo> stationVoList = new ArrayList<>();
-        stationList.forEach(item -> {
+        stationList.stream().limit(1).forEach(item -> {
             StationVo stationVo = new StationVo();
             BeanUtils.copyProperties(item, stationVo);
-
+            // 计算距离
+            Double distance = mapService.calculateDistance(longitude, latitude, item.getLongitude().toString(), item.getLatitude().toString());
+            stationVo.setDistance(distance);
             // 获取柜机信息
             Cabinet cabinet = cabinetIdToCabinetMap.get(item.getCabinetId());
             //可用充电宝数量大于0，可借用
@@ -83,10 +96,43 @@ public class DeviceServiceImpl implements IDeviceService {
             } else {
                 stationVo.setIsReturn("0");
             }
-
+            // 获取费用规则
+            R<FeeRule> feeRuleResult = remoteRuleService.getFeeRule(item.getFeeRuleId(), SecurityConstants.INNER);
+            FeeRule feeRule =  feeRuleResult.getData();
+            stationVo.setFeeRule(feeRule.getDescription());
             stationVoList.add(stationVo);
         });
         return stationVoList;
     }
 
+
+    @Override
+    public StationVo getStation(Long id, String latitude, String longitude) {
+        Station station = stationService.getById(id);
+        StationVo stationVo = new StationVo();
+        BeanUtils.copyProperties(station, stationVo);
+        // 计算距离
+        Double distance = mapService.calculateDistance(longitude, latitude, station.getLongitude().toString(), station.getLatitude().toString());
+        stationVo.setDistance(distance);
+
+        // 获取柜机信息
+        Cabinet cabinet = cabinetService.getById(station.getCabinetId());
+        //可用充电宝数量大于0，可借用
+        if(cabinet.getAvailableNum() > 0) {
+            stationVo.setIsUsable("1");
+        } else {
+            stationVo.setIsUsable("0");
+        }
+        // 获取空闲插槽数量大于0，可归还
+        if (cabinet.getFreeSlots() > 0) {
+            stationVo.setIsReturn("1");
+        } else {
+            stationVo.setIsReturn("0");
+        }
+
+        // 获取费用规则
+        FeeRule feeRule = remoteRuleService.getFeeRule(station.getFeeRuleId(), SecurityConstants.INNER).getData();
+        stationVo.setFeeRule(feeRule.getDescription());
+        return stationVo;
+    }
 }
