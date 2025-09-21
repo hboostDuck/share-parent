@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.share.user.mapper.OrderInfoMapper">
+
+    <resultMap type="OrderInfo" id="OrderInfoResult" autoMapping="true">
+    </resultMap>
+
+    <sql id="selectOrderInfoVo">
+        select id, user_id, nickname, order_no, power_bank_no, start_time, start_station_id, start_station_name, start_cabinet_no, end_time, end_station_id, end_station_name, end_cabinet_no, duration, fee_rule, fee_rule_id, total_amount, deduct_amount, real_amount, pay_time, transaction_id, status, create_time, create_by, update_time, update_by, del_flag, remark from order_info
+    </sql>
+
+    <select id="selectOrderInfoList" parameterType="OrderInfo" resultMap="OrderInfoResult">
+        <include refid="selectOrderInfoVo"/>
+        <where>
+            <if test="userId != null "> and user_id = #{userId}</if>
+            <if test="nickname != null  and nickname != ''"> and nickname like concat('%', #{nickname}, '%')</if>
+            <if test="orderNo != null  and orderNo != ''"> and order_no = #{orderNo}</if>
+            <if test="powerBankNo != null  and powerBankNo != ''"> and power_bank_no = #{powerBankNo}</if>
+            <if test="startTime != null "> and start_time = #{startTime}</if>
+            <if test="startStationId != null "> and start_station_id = #{startStationId}</if>
+            <if test="startStationName != null  and startStationName != ''"> and start_station_name like concat('%', #{startStationName}, '%')</if>
+            <if test="startCabinetNo != null  and startCabinetNo != ''"> and start_cabinet_no = #{startCabinetNo}</if>
+            <if test="endTime != null "> and end_time = #{endTime}</if>
+            <if test="endStationId != null "> and end_station_id = #{endStationId}</if>
+            <if test="endStationName != null  and endStationName != ''"> and end_station_name like concat('%', #{endStationName}, '%')</if>
+            <if test="endCabinetNo != null  and endCabinetNo != ''"> and end_cabinet_no = #{endCabinetNo}</if>
+            <if test="duration != null "> and duration = #{duration}</if>
+            <if test="feeRule != null  and feeRule != ''"> and fee_rule = #{feeRule}</if>
+            <if test="feeRuleId != null "> and fee_rule_id = #{feeRuleId}</if>
+            <if test="totalAmount != null "> and total_amount = #{totalAmount}</if>
+            <if test="deductAmount != null "> and deduct_amount = #{deductAmount}</if>
+            <if test="realAmount != null "> and real_amount = #{realAmount}</if>
+            <if test="payTime != null "> and pay_time = #{payTime}</if>
+            <if test="transactionId != null  and transactionId != ''"> and transaction_id = #{transactionId}</if>
+            <if test="status != null  and status != ''"> and status = #{status}</if>
+        and del_flag = 0
+        </where>
+    </select>
+
+</mapper>

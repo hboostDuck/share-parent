@@ -124,4 +124,9 @@ public class StationServiceImpl extends ServiceImpl<StationMapper, Station> impl
             }
         }
     }
+
+    @Override
+    public Station getByCabinetId(Long cabinetId) {
+        return stationMapper.selectOne(new LambdaQueryWrapper<Station>().eq(Station::getCabinetId, cabinetId));
+    }
 }

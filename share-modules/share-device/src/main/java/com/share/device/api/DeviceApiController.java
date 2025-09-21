@@ -49,4 +49,11 @@ public class DeviceApiController extends BaseController {
     {
         return success(deviceService.getStation(id, latitude, longitude));
     }
+
+    @Operation(summary = "扫码充电")
+    @RequiresLogin
+    @GetMapping("scanCharge/{cabinetNo}")
+    public AjaxResult scanCharge(@PathVariable String cabinetNo) {
+        return success(deviceService.scanCharge(cabinetNo));
+    }
 }

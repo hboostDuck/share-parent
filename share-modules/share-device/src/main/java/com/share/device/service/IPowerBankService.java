@@ -15,4 +15,6 @@ public interface IPowerBankService extends IService<PowerBank>
     int savePowerBank(PowerBank powerBank);
 
     int updatePowerBank(PowerBank powerBank);
+
+
 }

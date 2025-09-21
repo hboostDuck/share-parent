@@ -33,4 +33,9 @@ public class ServiceNameConstants
      * 规则模块的serviceid
      */
     public static final String RULE_SERVICE = "share-rule";
+
+    /**
+     * 订单模块的serviceid
+     */
+    public static final String ORDER_SERVICE = "share-order";
 }

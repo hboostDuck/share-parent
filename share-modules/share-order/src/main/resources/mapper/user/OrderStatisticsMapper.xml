@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.share.user.mapper.OrderStatisticsMapper">
+
+    <resultMap type="OrderStatistics" id="OrderStatisticsResult" autoMapping="true">
+    </resultMap>
+
+    <sql id="selectOrderStatisticsVo">
+        select id, station_id, order_date, total_amount, total_num, create_time, update_time, is_deleted from order_statistics
+    </sql>
+
+    <select id="selectOrderStatisticsList" parameterType="OrderStatistics" resultMap="OrderStatisticsResult">
+        <include refid="selectOrderStatisticsVo"/>
+        <where>
+            <if test="stationId != null "> and station_id = #{stationId}</if>
+            <if test="orderDate != null "> and order_date = #{orderDate}</if>
+            <if test="totalAmount != null "> and total_amount = #{totalAmount}</if>
+            <if test="totalNum != null "> and total_num = #{totalNum}</if>
+            <if test="isDeleted != null "> and is_deleted = #{isDeleted}</if>
+        and del_flag = 0
+        </where>
+    </select>
+
+</mapper>

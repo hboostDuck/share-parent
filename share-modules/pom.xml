@@ -16,6 +16,7 @@
         <module>share-device</module>
         <module>share-rule</module>
         <module>share-user</module>
+        <module>share-order</module>
     </modules>
 
     <artifactId>share-modules</artifactId>
@@ -25,11 +26,21 @@
         share-modules业务模块
     </description>
     <dependencies>
-    <dependency>
-        <groupId>com.share</groupId>
-        <artifactId>share-api-rule</artifactId>
-        <version>3.6.3</version>
-    </dependency>
-
+        <dependency>
+            <groupId>com.share</groupId>
+            <artifactId>share-api-rule</artifactId>
+            <version>3.6.3</version>
+        </dependency>
+        <dependency>
+            <groupId>com.share</groupId>
+            <artifactId>share-api-order</artifactId>
+            <version>3.6.3</version>
+        </dependency>
+        <dependency>
+            <groupId>com.share</groupId>
+            <artifactId>share-api-user</artifactId>
+            <version>3.6.3</version>
+            <scope>compile</scope>
+        </dependency>
 </dependencies>
 </project>
