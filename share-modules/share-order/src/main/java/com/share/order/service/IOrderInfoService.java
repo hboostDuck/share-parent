@@ -1,8 +1,11 @@
 package com.share.order.service;
 
 import java.util.List;
+
+import com.share.order.domain.EndOrderVo;
 import com.share.order.domain.OrderInfo;
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.share.order.domain.SubmitOrderVo;
 
 /**
  * 订单Service接口
@@ -24,4 +27,8 @@ public interface IOrderInfoService extends IService<OrderInfo>
     OrderInfo getNoFinishOrder(Long userId);
 
     OrderInfo selectOrderInfoById(Long id);
+
+    Long saveOrder(SubmitOrderVo orderForm);
+
+    void endOrder(EndOrderVo endOrderVo);
 }

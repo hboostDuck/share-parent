@@ -2,6 +2,8 @@ package com.share.device.emqx.handler.impl;
 
 import com.alibaba.fastjson2.JSONObject;
 import com.share.common.core.utils.StringUtils;
+import com.share.common.rabbit.constant.MqConst;
+import com.share.common.rabbit.service.RabbitService;
 import com.share.device.domain.Cabinet;
 import com.share.device.domain.CabinetSlot;
 import com.share.device.domain.PowerBank;
@@ -13,6 +15,7 @@ import com.share.device.service.ICabinetService;
 import com.share.device.service.ICabinetSlotService;
 import com.share.device.service.IPowerBankService;
 import com.share.device.service.IStationService;
+import com.share.order.domain.SubmitOrderVo;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -42,8 +45,8 @@ public class PowerBankUnlockHandler implements MassageHandler {
     @Autowired
     private RedisTemplate redisTemplate;
 
-//    @Autowired
-//    private RabbitService rabbitService;
+    @Autowired
+    private RabbitService rabbitService;
 
     @Transactional(rollbackFor = Exception.class)
     @Override
@@ -107,7 +110,17 @@ public class PowerBankUnlockHandler implements MassageHandler {
         cabinetService.updateById(cabinet);
 
         //发送消息构建订单
-        //TODO
+        SubmitOrderVo submitOrderVo = new SubmitOrderVo();
+        submitOrderVo.setMessageNo(messageNo);
+        submitOrderVo.setUserId(userId);
+        submitOrderVo.setPowerBankNo(powerBankNo);
+        submitOrderVo.setStartStationId(station.getId());
+        submitOrderVo.setStartStationName(station.getName());
+        submitOrderVo.setStartCabinetNo(cabinetNo);
+        submitOrderVo.setFeeRuleId(station.getFeeRuleId());
+        log.info("构建订单对象: {}", JSONObject.toJSONString(submitOrderVo));
+        //发送信息
+        rabbitService.sendMessage(MqConst.EXCHANGE_ORDER, MqConst.ROUTING_SUBMIT_ORDER, JSONObject.toJSONString(submitOrderVo));
     }
 
 }

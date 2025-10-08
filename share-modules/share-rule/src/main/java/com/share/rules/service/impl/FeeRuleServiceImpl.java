@@ -1,15 +1,25 @@
 package com.share.rules.service.impl;
 
+import com.alibaba.fastjson2.JSON;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 
+import com.share.common.core.utils.bean.BeanUtils;
 import com.share.rule.api.domain.FeeRule;
+import com.share.rule.api.domain.FeeRuleRequestForm;
+import com.share.rule.api.domain.FeeRuleResponseVo;
+import com.share.rules.config.DroolsHelper;
+import com.share.rules.domain.vo.FeeRuleRequest;
+import com.share.rules.domain.vo.FeeRuleResponse;
 import com.share.rules.mapper.FeeRuleMapper;
 import com.share.rules.service.IFeeRuleService;
 import lombok.extern.slf4j.Slf4j;
+import org.kie.api.runtime.KieContainer;
+import org.kie.api.runtime.KieSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Slf4j
@@ -29,6 +39,38 @@ public class FeeRuleServiceImpl extends ServiceImpl<FeeRuleMapper, FeeRule> impl
     @Override
     public List<FeeRule> getALLFeeRuleList() {
         return feeRuleMapper.selectList(new LambdaQueryWrapper<FeeRule>().eq(FeeRule::getStatus, "1"));
+    }
+
+    @Override
+    public FeeRuleResponseVo calculateOrderFee(FeeRuleRequestForm feeRuleRequestForm) {
+        //封装传入对象
+        FeeRuleRequest feeRuleRequest = new FeeRuleRequest();
+        feeRuleRequest.setDurations(feeRuleRequestForm.getDuration());
+        log.info("传入参数：{}", JSON.toJSONString(feeRuleRequest));
+
+        //获取最新订单费用规则
+        FeeRule feeRule = feeRuleMapper.selectById(feeRuleRequestForm.getFeeRuleId());
+        KieSession kieSession = DroolsHelper.loadForRule(feeRule.getRule());
+
+        //封装返回对象
+        FeeRuleResponse feeRuleResponse = new FeeRuleResponse();
+        kieSession.setGlobal("feeRuleResponse", feeRuleResponse);
+        // 设置订单对象
+        kieSession.insert(feeRuleRequest);
+        // 触发规则
+        kieSession.fireAllRules();
+        // 中止会话
+        kieSession.dispose();
+        log.info("计算结果：{}", JSON.toJSONString(feeRuleResponse));
+
+        //封装返回对象
+        FeeRuleResponseVo feeRuleResponseVo = new FeeRuleResponseVo();
+        feeRuleResponseVo.setTotalAmount(new BigDecimal(feeRuleResponse.getTotalAmount()));
+        feeRuleResponseVo.setFreePrice(new BigDecimal(feeRuleResponse.getFreePrice()));
+        feeRuleResponseVo.setExceedPrice(new BigDecimal(feeRuleResponse.getExceedPrice()));
+        feeRuleResponseVo.setFreeDescription(feeRuleResponse.getFreeDescription());
+        feeRuleResponseVo.setExceedDescription(feeRuleResponse.getExceedDescription());
+        return feeRuleResponseVo;
     }
 
 }

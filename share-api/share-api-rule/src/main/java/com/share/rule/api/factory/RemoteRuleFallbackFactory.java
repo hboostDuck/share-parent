@@ -4,6 +4,8 @@ import cn.hutool.system.UserInfo;
 import com.share.common.core.domain.R;
 import com.share.rule.api.RemoteRuleService;
 import com.share.rule.api.domain.FeeRule;
+import com.share.rule.api.domain.FeeRuleRequestForm;
+import com.share.rule.api.domain.FeeRuleResponseVo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -24,4 +26,10 @@ public class RemoteRuleFallbackFactory implements RemoteRuleService {
     public R<FeeRule> getFeeRule(Long id, String source) {
         return null;
     }
+
+    @Override
+    public R<FeeRuleResponseVo> calculateOrderFee(FeeRuleRequestForm calculateOrderFeeForm, String source) {
+        return R.fail("费用计算失败:");
+    }
+
 }

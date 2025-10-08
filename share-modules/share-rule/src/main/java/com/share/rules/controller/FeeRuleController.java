@@ -8,18 +8,23 @@ import com.share.common.core.web.page.TableDataInfo;
 import com.share.common.security.annotation.InnerAuth;
 
 import com.share.rule.api.domain.FeeRule;
+import com.share.rule.api.domain.FeeRuleRequestForm;
+import com.share.rule.api.domain.FeeRuleResponseVo;
 import com.share.rules.service.IFeeRuleService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Arrays;
 import java.util.List;
 
+@Slf4j
 @Tag(name = "费用规则接口管理")
 @RestController
 @RequestMapping("/feeRule")
+@SuppressWarnings({"unchecked", "rawtypes"})
 public class FeeRuleController extends BaseController
 {
     @Autowired
@@ -101,6 +106,13 @@ public class FeeRuleController extends BaseController
     public AjaxResult getALLFeeRuleList()
     {
         return success(feeRuleService.getALLFeeRuleList());
+    }
+
+    @Operation(summary = "计算订单费用")
+    @InnerAuth
+    @PostMapping("/calculateOrderFee")
+    public R<FeeRuleResponseVo> calculateOrderFee(@RequestBody FeeRuleRequestForm calculateOrderFeeForm) {
+        return R.ok(feeRuleService.calculateOrderFee(calculateOrderFeeForm));
     }
 
 }

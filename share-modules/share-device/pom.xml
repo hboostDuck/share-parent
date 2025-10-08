@@ -74,6 +74,13 @@
             <groupId>org.eclipse.paho</groupId>
             <artifactId>org.eclipse.paho.client.mqttv3</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.share</groupId>
+            <artifactId>share-common-rabbit</artifactId>
+            <version>3.6.3</version>
+            <scope>compile</scope>
+        </dependency>
+
     </dependencies>
 
 

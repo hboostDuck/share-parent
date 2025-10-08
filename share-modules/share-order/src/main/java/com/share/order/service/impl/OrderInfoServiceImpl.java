@@ -1,15 +1,35 @@
 package com.share.order.service.impl;
 
+import java.math.BigDecimal;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 
+import cn.hutool.core.util.RandomUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.share.common.core.constant.SecurityConstants;
+import com.share.common.core.domain.R;
+import com.share.common.core.exception.ServiceException;
+import com.share.common.security.utils.SecurityUtils;
+import com.share.order.api.RemoteUserService;
+import com.share.order.api.domain.UserInfo;
+import com.share.order.domain.EndOrderVo;
+import com.share.order.domain.OrderBill;
+import com.share.order.domain.SubmitOrderVo;
+import com.share.order.mapper.OrderBillMapper;
+import com.share.rule.api.RemoteRuleService;
+import com.share.rule.api.domain.FeeRule;
+import com.share.rule.api.domain.FeeRuleRequestForm;
+import com.share.rule.api.domain.FeeRuleResponseVo;
+import org.joda.time.DateTime;
+import org.joda.time.Minutes;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import com.share.order.mapper.OrderInfoMapper;
 import com.share.order.domain.OrderInfo;
 import com.share.order.service.IOrderInfoService;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * 订单Service业务层处理
@@ -23,7 +43,14 @@ public class OrderInfoServiceImpl extends ServiceImpl<OrderInfoMapper, OrderInfo
     @Autowired
     private OrderInfoMapper orderInfoMapper;
 
+    @Autowired
+    private RemoteRuleService remoteFeeRuleService;
 
+    @Autowired
+    private RemoteUserService remoteUserInfoService;
+
+    @Autowired
+    private OrderBillMapper orderBillMapper;
 
     /**
      * 查询订单列表
@@ -51,6 +78,91 @@ public class OrderInfoServiceImpl extends ServiceImpl<OrderInfoMapper, OrderInfo
     @Override
     public OrderInfo selectOrderInfoById(Long id) {
         return baseMapper.selectById(id);
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    @Override
+    public Long saveOrder(SubmitOrderVo orderForm) {
+        OrderInfo orderInfo = new OrderInfo();
+        orderInfo.setUserId(orderForm.getUserId());
+        orderInfo.setOrderNo(RandomUtil.randomString(8));
+        orderInfo.setPowerBankNo(orderForm.getPowerBankNo());
+        orderInfo.setStartTime(new Date());
+        orderInfo.setStartStationId(orderForm.getStartStationId());
+        orderInfo.setStartStationName(orderForm.getStartStationName());
+        orderInfo.setStartCabinetNo(orderForm.getStartCabinetNo());
+        // 费用规则
+        FeeRule feeRule = remoteFeeRuleService.getFeeRule(orderForm.getFeeRuleId(), SecurityConstants.INNER).getData();
+        orderInfo.setFeeRuleId(orderForm.getFeeRuleId());
+        orderInfo.setFeeRule(feeRule.getDescription());
+        orderInfo.setStatus("0");
+        orderInfo.setCreateTime(new Date());
+        orderInfo.setCreateBy(SecurityUtils.getUsername());
+        //用户昵称
+        UserInfo userInfo = remoteUserInfoService.getUserInfo(orderInfo.getUserId(), SecurityConstants.INNER).getData();
+        orderInfo.setNickname(userInfo.getNickname());
+
+        orderInfoMapper.insert(orderInfo);
+        return orderInfo.getId();
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    @Override
+    public void endOrder(EndOrderVo endOrderVo) {
+        // 获取充电中的订单，如果存在，则结束订单； 如果不存在，则返回（初始化插入，无订单）
+        OrderInfo orderInfo = orderInfoMapper.selectOne(new LambdaQueryWrapper<OrderInfo>()
+                .eq(OrderInfo::getPowerBankNo, endOrderVo.getPowerBankNo())
+                .eq(OrderInfo::getStatus, "0") //订单状态：0:充电中
+                .orderByDesc(OrderInfo::getCreateTime)
+                .last("limit 1")
+        );
+        if (orderInfo == null) {
+            return;
+        }
+
+        orderInfo.setEndTime(endOrderVo.getEndTime());
+        orderInfo.setEndStationId(endOrderVo.getEndStationId());
+        orderInfo.setEndStationName(endOrderVo.getEndStationName());
+        orderInfo.setEndCabinetNo(endOrderVo.getEndCabinetNo());
+        int duration = Minutes.minutesBetween(new DateTime(orderInfo.getStartTime()), new DateTime(orderInfo.getEndTime())).getMinutes();
+        orderInfo.setDuration((long) duration);
+
+        // 费用计算
+        FeeRuleRequestForm feeRuleRequestForm = new FeeRuleRequestForm();
+        feeRuleRequestForm.setDuration(duration);
+        feeRuleRequestForm.setFeeRuleId(orderInfo.getFeeRuleId());
+        R<FeeRuleResponseVo> feeRuleResponseVoResult = remoteFeeRuleService.calculateOrderFee(feeRuleRequestForm, SecurityConstants.INNER);
+        if (R.FAIL == feeRuleResponseVoResult.getCode()) {
+            throw new ServiceException(feeRuleResponseVoResult.getMsg());
+        }
+        FeeRuleResponseVo feeRuleResponseVo = feeRuleResponseVoResult.getData();
+
+        // 设置订单金额
+        orderInfo.setTotalAmount(feeRuleResponseVo.getTotalAmount());
+        orderInfo.setDeductAmount(new BigDecimal(0));
+        orderInfo.setRealAmount(feeRuleResponseVo.getTotalAmount());
+        if(orderInfo.getRealAmount().subtract(new BigDecimal(0)).doubleValue() == 0) {
+            orderInfo.setStatus("2");
+        } else {
+            orderInfo.setStatus("1");
+        }
+        orderInfoMapper.updateById(orderInfo);
+
+        // 插入免费订单账单
+        OrderBill freeOrderBill = new OrderBill();
+        freeOrderBill.setOrderId(orderInfo.getId());
+        freeOrderBill.setBillItem(feeRuleResponseVo.getFreeDescription());
+        freeOrderBill.setBillAmount(new BigDecimal(0));
+        orderBillMapper.insert(freeOrderBill);
+
+        // 插入超出免费订单账单
+        if (feeRuleResponseVo.getExceedPrice().doubleValue() > 0) {
+            OrderBill exceedOrderBill = new OrderBill();
+            exceedOrderBill.setOrderId(orderInfo.getId());
+            exceedOrderBill.setBillItem(feeRuleResponseVo.getExceedDescription());
+            exceedOrderBill.setBillAmount(feeRuleResponseVo.getExceedPrice());
+            orderBillMapper.insert(exceedOrderBill);
+        }
     }
 
 }
