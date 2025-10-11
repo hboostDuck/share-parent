@@ -1,6 +1,7 @@
 package com.share.order.receiver;
 
 import com.alibaba.fastjson2.JSONObject;
+import com.share.common.core.utils.StringUtils;
 import com.share.common.rabbit.constant.MqConst;
 import com.share.order.domain.EndOrderVo;
 import com.share.order.domain.SubmitOrderVo;
@@ -89,5 +90,29 @@ public class OrderReceiver {
             // 消费异常，重新入队
             channel.basicNack(message.getMessageProperties().getDeliveryTag(), false, true);
         }
+    }
+
+    /**
+     * 监听订单支付成功消息：更新订单状态；扣减商品库存
+     *
+     * @param orderNo
+     * @param message
+     * @param channel
+     */
+    @SneakyThrows
+    @RabbitListener(bindings = @QueueBinding(
+            exchange = @Exchange(value = MqConst.EXCHANGE_PAYMENT_PAY, durable = "true"),
+            value = @Queue(value = MqConst.QUEUE_PAYMENT_PAY, durable = "true"),
+            key = MqConst.ROUTING_PAYMENT_PAY
+    ))
+    public void processPaySucess(String orderNo, Message message, Channel channel) {
+        //业务处理
+        if (StringUtils.isNotEmpty(orderNo)) {
+            log.info("[订单服务]监听订单支付成功消息：{}", orderNo);
+            //更改订单支付状态
+            orderInfoService.processPaySucess(orderNo);
+        }
+        //手动应答
+        channel.basicAck(message.getMessageProperties().getDeliveryTag(), false);
     }
 }

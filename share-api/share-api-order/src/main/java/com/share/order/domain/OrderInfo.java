@@ -2,6 +2,9 @@ package com.share.order.domain;
 
 import java.math.BigDecimal;
 import java.util.Date;
+import java.util.List;
+
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.share.common.core.web.domain.BaseEntity;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -127,5 +130,13 @@ public class OrderInfo extends BaseEntity
     @Excel(name = "订单状态：0:充电中 1：未支付 2：已支付")
     @Schema(description = "订单状态：0:充电中 1：未支付 2：已支付")
     private String status;
+
+    @Schema(description = "订单账单祥")
+    @TableField(exist = false)
+    private List<OrderBill> orderBillList;
+
+    @Schema(description = "用户信息")
+    @TableField(exist = false)
+    private UserInfoVo userInfoVo;
 
 }

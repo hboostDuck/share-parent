@@ -9,14 +9,18 @@ import org.springframework.cloud.openfeign.FallbackFactory;
 import org.springframework.stereotype.Component;
 
 @Component
-public class RemoteOrderInfoFallbackFactory implements FallbackFactory<RemoteOrderInfoService>
+public class RemoteOrderInfoFallbackFactory implements RemoteOrderInfoService
 {
     private static final Logger log = LoggerFactory.getLogger(RemoteOrderInfoFallbackFactory.class);
 
+
     @Override
-    public RemoteOrderInfoService create(Throwable throwable)
-    {
-        log.error("订单服务调用失败:{}", throwable.getMessage());
-        return (userId, source) -> R.fail("获取用户未完成订单失败:" + throwable.getMessage());
+    public R<OrderInfo> getNoFinishOrder(Long userId, String source) {
+        return null;
+    }
+
+    @Override
+    public R<OrderInfo> getByOrderNo(String orderNo, String source) {
+        return null;
     }
 }

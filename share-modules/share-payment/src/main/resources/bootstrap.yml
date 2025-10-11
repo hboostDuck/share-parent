@@ -1,0 +1,30 @@
+# Tomcat
+server:
+  port: 9211
+
+# Spring
+spring:
+  application:
+    # 应用名称
+    name: share-payment
+  profiles:
+    # 环境配置
+    active: dev
+  main:
+    allow-bean-definition-overriding: true
+  cloud:
+    nacos:
+      discovery:
+        # 服务注册地址
+        server-addr: 127.0.0.1:8848
+        namespace: 2b2016a1-6fe1-4524-b1ea-2dbd317e2f14
+      config:
+        # 配置中心地址
+        server-addr: 127.0.0.1:8848
+        namespace: 2b2016a1-6fe1-4524-b1ea-2dbd317e2f14
+        # 配置文件格式
+        file-extension: yml
+        # 共享配置
+        shared-configs:
+          - application-${spring.profiles.active}.${spring.cloud.nacos.config.file-extension}
+

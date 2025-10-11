@@ -31,4 +31,11 @@ public interface IOrderInfoService extends IService<OrderInfo>
     Long saveOrder(SubmitOrderVo orderForm);
 
     void endOrder(EndOrderVo endOrderVo);
+
+    List<OrderInfo> selectUserOrderInfoList(Long userId);
+
+    OrderInfo getByOrderNo(String orderNo);
+
+
+    void processPaySucess(String orderNo);
 }

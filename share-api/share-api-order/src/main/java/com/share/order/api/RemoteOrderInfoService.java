@@ -15,4 +15,7 @@ public interface RemoteOrderInfoService {
 
     @GetMapping("/orderInfo/getNoFinishOrder/{userId}")
     public R<OrderInfo> getNoFinishOrder(@PathVariable("userId") Long userId, @RequestHeader(SecurityConstants.FROM_SOURCE) String source);
+
+    @GetMapping("/orderInfo/getByOrderNo/{orderNo}")
+    public R<OrderInfo> getByOrderNo(@PathVariable("orderNo") String orderNo, @RequestHeader(SecurityConstants.FROM_SOURCE) String source);
 }

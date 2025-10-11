@@ -7,16 +7,17 @@ import java.util.List;
 
 import cn.hutool.core.util.RandomUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.toolkit.CollectionUtils;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.share.common.core.constant.SecurityConstants;
 import com.share.common.core.domain.R;
 import com.share.common.core.exception.ServiceException;
+import com.share.common.core.utils.StringUtils;
+import com.share.common.core.utils.bean.BeanUtils;
 import com.share.common.security.utils.SecurityUtils;
 import com.share.order.api.RemoteUserService;
 import com.share.order.api.domain.UserInfo;
-import com.share.order.domain.EndOrderVo;
-import com.share.order.domain.OrderBill;
-import com.share.order.domain.SubmitOrderVo;
+import com.share.order.domain.*;
 import com.share.order.mapper.OrderBillMapper;
 import com.share.rule.api.RemoteRuleService;
 import com.share.rule.api.domain.FeeRule;
@@ -27,7 +28,6 @@ import org.joda.time.Minutes;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import com.share.order.mapper.OrderInfoMapper;
-import com.share.order.domain.OrderInfo;
 import com.share.order.service.IOrderInfoService;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -77,7 +77,51 @@ public class OrderInfoServiceImpl extends ServiceImpl<OrderInfoMapper, OrderInfo
 
     @Override
     public OrderInfo selectOrderInfoById(Long id) {
-        return baseMapper.selectById(id);
+        OrderInfo orderInfo = orderInfoMapper.selectById(id);
+
+        //充电中实时计算使用时间与金额
+        if ("0".equals(orderInfo.getStatus())) {
+            //充电中实时计算使用时间
+            int duration = Minutes.minutesBetween(new DateTime(orderInfo.getStartTime()), new DateTime()).getMinutes();
+            if (duration > 0) {
+                orderInfo.setDuration((long) duration);
+
+                // 费用计算
+                FeeRuleRequestForm feeRuleRequestForm = new FeeRuleRequestForm();
+                feeRuleRequestForm.setDuration(duration);
+                feeRuleRequestForm.setFeeRuleId(orderInfo.getFeeRuleId());
+                R<FeeRuleResponseVo> feeRuleResponseVoResult = remoteFeeRuleService.calculateOrderFee(feeRuleRequestForm, SecurityConstants.INNER);
+                if (R.FAIL == feeRuleResponseVoResult.getCode()) {
+                    throw new ServiceException(feeRuleResponseVoResult.getMsg());
+                }
+                FeeRuleResponseVo feeRuleResponseVo = feeRuleResponseVoResult.getData();
+
+                // 设置订单金额
+                orderInfo.setTotalAmount(feeRuleResponseVo.getTotalAmount());
+                orderInfo.setDeductAmount(new BigDecimal(0));
+                orderInfo.setRealAmount(feeRuleResponseVo.getTotalAmount());
+            } else {
+                orderInfo.setDuration(0L);
+                orderInfo.setTotalAmount(new BigDecimal(0));
+                orderInfo.setDeductAmount(new BigDecimal(0));
+                orderInfo.setRealAmount(new BigDecimal(0));
+            }
+        }
+
+        List<OrderBill> orderBillList = orderBillMapper.selectList(new LambdaQueryWrapper<OrderBill>().eq(OrderBill::getOrderId, id));
+        orderInfo.setOrderBillList(orderBillList);
+
+        R<UserInfo> userInfoResult = remoteUserInfoService.getUserInfo(orderInfo.getUserId(), SecurityConstants.INNER);
+        if (StringUtils.isNull(userInfoResult) || StringUtils.isNull(userInfoResult.getData())) {
+            throw new ServiceException("获取用户信息失败");
+        }
+        if (R.FAIL == userInfoResult.getCode()) {
+            throw new ServiceException(userInfoResult.getMsg());
+        }
+        UserInfoVo userInfoVo = new UserInfoVo();
+        BeanUtils.copyProperties(userInfoResult.getData(), userInfoVo);
+        orderInfo.setUserInfoVo(userInfoVo);
+        return orderInfo;
     }
 
     @Transactional(rollbackFor = Exception.class)
@@ -125,6 +169,7 @@ public class OrderInfoServiceImpl extends ServiceImpl<OrderInfoMapper, OrderInfo
         orderInfo.setEndStationName(endOrderVo.getEndStationName());
         orderInfo.setEndCabinetNo(endOrderVo.getEndCabinetNo());
         int duration = Minutes.minutesBetween(new DateTime(orderInfo.getStartTime()), new DateTime(orderInfo.getEndTime())).getMinutes();
+        duration = Math.max(duration, 1);
         orderInfo.setDuration((long) duration);
 
         // 费用计算
@@ -162,6 +207,65 @@ public class OrderInfoServiceImpl extends ServiceImpl<OrderInfoMapper, OrderInfo
             exceedOrderBill.setBillItem(feeRuleResponseVo.getExceedDescription());
             exceedOrderBill.setBillAmount(feeRuleResponseVo.getExceedPrice());
             orderBillMapper.insert(exceedOrderBill);
+        }
+    }
+
+    @Override
+    public List<OrderInfo> selectUserOrderInfoList(Long userId) {
+        List<OrderInfo> orderInfoList = orderInfoMapper.selectList(new LambdaQueryWrapper<OrderInfo>()
+                .eq(OrderInfo::getUserId, userId)
+                .orderByDesc(OrderInfo::getId)
+        );
+        if (!CollectionUtils.isEmpty(orderInfoList)) {
+            for (OrderInfo orderInfo : orderInfoList) {
+                //充电中实时计算使用时间与金额
+                if ("0".equals(orderInfo.getStatus())) {
+                    //充电中实时计算使用时间
+                    int duration = Minutes.minutesBetween(new DateTime(orderInfo.getStartTime()), new DateTime()).getMinutes();
+                    if (duration > 0) {
+                        orderInfo.setDuration((long) duration);
+
+                        // 费用计算
+                        FeeRuleRequestForm feeRuleRequestForm = new FeeRuleRequestForm();
+                        feeRuleRequestForm.setDuration(duration);
+                        feeRuleRequestForm.setFeeRuleId(orderInfo.getFeeRuleId());
+                        R<FeeRuleResponseVo> feeRuleResponseVoResult = remoteFeeRuleService.calculateOrderFee(feeRuleRequestForm, SecurityConstants.INNER);
+                        if (R.FAIL == feeRuleResponseVoResult.getCode()) {
+                            throw new ServiceException(feeRuleResponseVoResult.getMsg());
+                        }
+                        FeeRuleResponseVo feeRuleResponseVo = feeRuleResponseVoResult.getData();
+
+                        // 设置订单金额
+                        orderInfo.setTotalAmount(feeRuleResponseVo.getTotalAmount());
+                        orderInfo.setDeductAmount(new BigDecimal(0));
+                        orderInfo.setRealAmount(feeRuleResponseVo.getTotalAmount());
+                    } else {
+                        orderInfo.setDuration(0L);
+                        orderInfo.setTotalAmount(new BigDecimal(0));
+                        orderInfo.setDeductAmount(new BigDecimal(0));
+                        orderInfo.setRealAmount(new BigDecimal(0));
+                    }
+
+                }
+            }
+        }
+        return orderInfoList;
+    }
+
+    @Override
+    public OrderInfo getByOrderNo(String orderNo) {
+        return orderInfoMapper.selectOne(new LambdaQueryWrapper<OrderInfo>().eq(OrderInfo::getOrderNo, orderNo));
+    }
+
+    @Override
+    public void processPaySucess(String orderNo) {
+        //获取订单信息
+        OrderInfo orderInfo = orderInfoMapper.selectOne(new LambdaQueryWrapper<OrderInfo>().eq(OrderInfo::getOrderNo, orderNo).select(OrderInfo::getId, OrderInfo::getStatus));
+        //未支付
+        if ("1".equals(orderInfo.getStatus())) {
+            orderInfo.setStatus("2");
+            orderInfo.setPayTime(new Date());
+            orderInfoMapper.updateById(orderInfo);
         }
     }
 
