@@ -1,8 +1,10 @@
 package com.share.order.service;
 
 import java.util.List;
+import java.util.Map;
 
 import com.share.order.api.domain.UpdateUserLogin;
+import com.share.order.api.domain.UserCountVo;
 import com.share.order.api.domain.UserInfo;
 import com.baomidou.mybatisplus.extension.service.IService;
 
@@ -29,4 +31,5 @@ public interface IUserInfoService extends IService<UserInfo>
 
     Boolean isFreeDeposit();
 
+    public Map<String, Object> getUserCount();
 }

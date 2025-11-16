@@ -1,9 +1,7 @@
 package com.share.order.service.impl;
 
 import java.math.BigDecimal;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 
 import cn.hutool.core.util.RandomUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
@@ -267,6 +265,29 @@ public class OrderInfoServiceImpl extends ServiceImpl<OrderInfoMapper, OrderInfo
             orderInfo.setPayTime(new Date());
             orderInfoMapper.updateById(orderInfo);
         }
+    }
+
+    //传递过来sql语句，根据sql语句查询数据库得到报表数据
+    @Override
+    public Map<String, Object> getOrderCount(String sql) {
+        //调用mapper方法执行sql语句
+        List<Map<String,Object>> list = baseMapper.getOrderCount(sql);
+
+        Map<String, Object> dataMap = new HashMap<>();
+
+        List<Object> dateList = new ArrayList<>();
+        List<Object> countList = new ArrayList<>();
+        //把list集合遍历，得到每个map
+        for(Map<String,Object> map : list) {
+            //把每个map里面日期得到放到新的list集合里面
+            dateList.add(map.get("order_date"));
+            //把每个map里面数量得到放到新的list集合里面
+            countList.add(map.get("order_count"));
+        }
+        //把两个list集合放到dataMap中，返回
+        dataMap.put("dateList",dateList);
+        dataMap.put("countList",countList);
+        return dataMap;
     }
 
 }

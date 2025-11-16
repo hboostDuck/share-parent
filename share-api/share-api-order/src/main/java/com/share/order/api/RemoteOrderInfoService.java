@@ -4,11 +4,10 @@ import com.share.common.core.constant.SecurityConstants;
 import com.share.common.core.constant.ServiceNameConstants;
 import com.share.common.core.domain.R;
 import com.share.order.domain.OrderInfo;
+import com.share.order.domain.OrderSqlVo;
 import com.share.order.factory.RemoteOrderInfoFallbackFactory;
 import org.springframework.cloud.openfeign.FeignClient;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.*;
 
 @FeignClient(contextId = "remoteOrderInfoService", value = ServiceNameConstants.ORDER_SERVICE, fallbackFactory = RemoteOrderInfoFallbackFactory.class)
 public interface RemoteOrderInfoService {
@@ -18,4 +17,8 @@ public interface RemoteOrderInfoService {
 
     @GetMapping("/orderInfo/getByOrderNo/{orderNo}")
     public R<OrderInfo> getByOrderNo(@PathVariable("orderNo") String orderNo, @RequestHeader(SecurityConstants.FROM_SOURCE) String source);
+
+    //传递过来sql语句，根据sql语句查询数据库得到报表数据
+    @PostMapping("/orderInfo/getOrderCount")
+    public R getOrderCount(@RequestBody OrderSqlVo orderSqlVo, @RequestHeader(SecurityConstants.FROM_SOURCE) String source);
 }

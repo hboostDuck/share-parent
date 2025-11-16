@@ -1,8 +1,11 @@
 package com.share.order.mapper;
 
 import java.util.List;
+import java.util.Map;
+
 import com.share.order.domain.OrderInfo;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import org.apache.ibatis.annotations.Select;
 
 /**
  * 订单Mapper接口
@@ -20,5 +23,8 @@ public interface OrderInfoMapper extends BaseMapper<OrderInfo>
      * @return 订单集合
      */
     public List<OrderInfo> selectOrderInfoList(OrderInfo orderInfo);
+
+    @Select("${sql}")
+    List<Map<String, Object>> getOrderCount(String sql);
 
 }

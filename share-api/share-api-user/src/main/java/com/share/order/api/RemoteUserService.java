@@ -11,6 +11,8 @@ import com.share.order.api.factory.RemoteUserFallbackFactory;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
+
 @FeignClient(contextId = "remoteUserInfoService", value = ServiceNameConstants.USER_SERVICE, fallbackFactory = RemoteUserFallbackFactory.class)
 public interface RemoteUserService {
 
@@ -22,4 +24,7 @@ public interface RemoteUserService {
 
     @GetMapping(value = "/userInfo/getUserInfo/{id}")
     public R<UserInfo> getUserInfo(@PathVariable("id") Long id, @RequestHeader(SecurityConstants.FROM_SOURCE) String source);
+
+    @GetMapping(value = "/userInfo/getUserCount")
+    public R<Map<String, Object>> getUserCount(@RequestHeader(SecurityConstants.FROM_SOURCE) String source);
 }

@@ -1,6 +1,7 @@
 package com.share.order.service;
 
 import java.util.List;
+import java.util.Map;
 
 import com.share.order.domain.EndOrderVo;
 import com.share.order.domain.OrderInfo;
@@ -38,4 +39,6 @@ public interface IOrderInfoService extends IService<OrderInfo>
 
 
     void processPaySucess(String orderNo);
+
+    Map<String, Object> getOrderCount(String sql);
 }

@@ -10,17 +10,16 @@ import com.share.common.security.annotation.InnerAuth;
 import com.share.common.security.annotation.RequiresLogin;
 import com.share.common.security.utils.SecurityUtils;
 import com.share.order.domain.OrderInfo;
+import com.share.order.domain.OrderSqlVo;
 import com.share.order.service.IOrderInfoService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @Tag(name = "订单接口管理")
 @RestController
@@ -71,6 +70,14 @@ public class OrderInfoApiController extends BaseController
     public R<OrderInfo> getByOrderNo(@PathVariable String orderNo) {
         OrderInfo orderInfo = orderInfoService.getByOrderNo(orderNo);
         return R.ok(orderInfo);
+    }
+
+    //远程调用：订单报表
+    //传递过来sql语句，根据sql语句查询数据库得到报表数据
+    @PostMapping("/getOrderCount")
+    public R getOrderCount(@RequestBody OrderSqlVo orderSqlVo) {
+        Map<String,Object> map = orderInfoService.getOrderCount(orderSqlVo.getSql());
+        return R.ok(map);
     }
 
 }

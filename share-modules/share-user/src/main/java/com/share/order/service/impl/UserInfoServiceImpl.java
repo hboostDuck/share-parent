@@ -1,6 +1,9 @@
 package com.share.order.service.impl;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import cn.binarywang.wx.miniapp.api.WxMaService;
 import cn.binarywang.wx.miniapp.bean.WxMaJscode2SessionResult;
@@ -9,6 +12,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.share.common.core.context.SecurityContextHolder;
 import com.share.common.core.exception.ServiceException;
 import com.share.order.api.domain.UpdateUserLogin;
+import com.share.order.api.domain.UserCountVo;
 import com.share.order.domain.UserLoginLog;
 import com.share.order.mapper.UserLoginLogMapper;
 import lombok.extern.slf4j.Slf4j;
@@ -103,4 +107,19 @@ public class UserInfoServiceImpl extends ServiceImpl<UserInfoMapper, UserInfo> i
         return true;
     }
 
+    @Override
+    public Map<String, Object> getUserCount() {
+        List<UserCountVo> list = baseMapper.selectUserCount();
+
+        Map<String, Object> map = new HashMap<>();
+        //日期列表
+        List<String> dateList
+                =list.stream().map(UserCountVo::getRegisterDate).collect(Collectors.toList());
+        //统计列表
+        List<Integer> countList
+                =list.stream().map(UserCountVo::getCount).collect(Collectors.toList());
+        map.put("dateList", dateList);
+        map.put("countList", countList);
+        return map;
+    }
 }

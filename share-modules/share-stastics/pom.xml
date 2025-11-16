@@ -5,30 +5,36 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>com.share</groupId>
-        <artifactId>share-api</artifactId>
+        <artifactId>share-modules</artifactId>
         <version>3.6.3</version>
     </parent>
 
-    <artifactId>share-api-user</artifactId>
+    <artifactId>share-stastics</artifactId>
 
     <properties>
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <spring-ai.version>1.0.0-M5</spring-ai.version>
     </properties>
-    <dependencies>
 
-        <!-- RuoYi Common Core-->
+    <dependencies>
+        <!-- SpringCloud Alibaba Nacos -->
+        <dependency>
+            <groupId>com.alibaba.cloud</groupId>
+            <artifactId>spring-cloud-starter-alibaba-nacos-discovery</artifactId>
+        </dependency>
+
         <dependency>
             <groupId>com.share</groupId>
-            <artifactId>share-common-core</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.bouncycastle</groupId>
-            <artifactId>bcutil-jdk15on</artifactId>
-            <version>1.70</version>
-            <scope>compile</scope>
+            <artifactId>share-api-user</artifactId>
+            <version>3.6.3</version>
         </dependency>
 
+        <dependency>
+            <groupId>com.share</groupId>
+            <artifactId>share-api-order</artifactId>
+            <version>3.6.3</version>
+        </dependency>
     </dependencies>
+
 </project>

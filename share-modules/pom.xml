@@ -18,6 +18,8 @@
         <module>share-user</module>
         <module>share-order</module>
         <module>share-payment</module>
+        <module>share-stastics</module>
+        <module>share-ai</module>
     </modules>
 
     <artifactId>share-modules</artifactId>
@@ -43,5 +45,11 @@
             <version>3.6.3</version>
             <scope>compile</scope>
         </dependency>
+
+            <dependency>
+                <groupId>com.share</groupId>
+                <artifactId>share-common-security</artifactId>
+            </dependency>
+
 </dependencies>
 </project>

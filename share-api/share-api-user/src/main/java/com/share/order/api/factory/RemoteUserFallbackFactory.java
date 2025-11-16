@@ -9,6 +9,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
+import java.util.Map;
+
 @Component
 public class RemoteUserFallbackFactory implements RemoteUserService {
     private static final Logger log = LoggerFactory.getLogger(RemoteUserFallbackFactory.class);
@@ -26,6 +28,11 @@ public class RemoteUserFallbackFactory implements RemoteUserService {
 
     @Override
     public R<UserInfo> getUserInfo(Long id, String source) {
+        return R.fail("获取用户信息失败");
+    }
+
+    @Override
+    public R<Map<String, Object>> getUserCount(String source) {
         return R.fail("获取用户信息失败");
     }
 }
